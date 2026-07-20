@@ -18,17 +18,16 @@ export function OnboardingScreen() {
     setError('')
     try {
       const slug = orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now().toString(36)
-      const { data: org, error: orgErr } = await supabase
+      const orgId = crypto.randomUUID()
+      const { error: orgErr } = await supabase
         .from('organizations')
-        .insert({ name: orgName.trim(), slug })
-        .select()
-        .single()
+        .insert({ id: orgId, name: orgName.trim(), slug })
       if (orgErr) throw orgErr
       const { error: memberErr } = await supabase
         .from('org_members')
-        .insert({ org_id: org.id, user_id: user.id, role: 'admin' })
+        .insert({ org_id: orgId, user_id: user.id, role: 'admin' })
       if (memberErr) throw memberErr
-      localStorage.setItem('iterate_org_id', org.id)
+      localStorage.setItem('iterate_org_id', orgId)
       navigate('/')
     } catch (e: any) {
       setError(e.message)

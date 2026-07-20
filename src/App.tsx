@@ -1,4 +1,6 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { supabase } from './lib/supabase'
 import { useAuth } from './hooks/useAuth'
 import { useOrgState, OrgContext } from './hooks/useOrg'
 import { AuthScreen } from './screens/AuthScreen'
@@ -22,9 +24,9 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function RequireOrg({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
-  const orgState = useOrgState(user?.id)
-  if (orgState.loading) return (
+  const { user, loading: authLoading } = useAuth()
+  const orgState = useOrgState(user?.id, authLoading)
+  if (authLoading || orgState.loading) return (
     <div className="min-h-screen flex items-center justify-center bg-surface-secondary">
       <Spinner />
     </div>
@@ -38,8 +40,27 @@ function RequireOrg({ children }: { children: React.ReactNode }) {
 }
 
 function AuthCallback() {
-  return <Navigate to="/" replace />
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('AUTH EVENT:', event, session?.user?.email)
+      if (session) navigate('/', { replace: true })
+    })
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      console.log('SESSION:', data.session?.user?.email, 'ERROR:', error)
+      if (data.session) navigate('/', { replace: true })
+    })
+  }, [navigate])
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-surface-secondary">
+      <Spinner />
+    </div>
+  )
 }
+
 
 function AppRoutes() {
   return (

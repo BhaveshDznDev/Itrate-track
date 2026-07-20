@@ -18,17 +18,19 @@ export function useOrg() {
   return useContext(OrgContext)
 }
 
-export function useOrgState(userId: string | undefined): OrgState {
+export function useOrgState(userId: string | undefined, authLoading: boolean): OrgState {
   const [org, setOrg] = useState<Organization | null>(null)
   const [membership, setMembership] = useState<OrgMember | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (authLoading) return
     if (!userId) { setLoading(false); return }
+    setLoading(true)
     const stored = localStorage.getItem('iterate_org_id')
     fetchOrg(userId, stored || undefined)
-  }, [userId])
+  }, [userId, authLoading])
 
   async function fetchOrg(userId: string, preferredOrgId?: string) {
     try {
